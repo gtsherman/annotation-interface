@@ -1,0 +1,13 @@
+#doc {
+    width: 75%;
+    border: 1px solid gray;
+    float: left;
+    padding: 20px;
+}
+
+#terms {
+    width: 20%;
+    border: 1px solid gray;
+    float: left;
+    padding: 20px;
+}

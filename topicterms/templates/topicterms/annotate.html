@@ -1,0 +1,30 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block pagecss %}
+<link rel="stylesheet" type="text/css" href="{% static 'topicterms/annotate.css' %}">
+{% endblock %}
+
+{% block content %}
+<div id="doc">
+    <h1>Document: {{ document.docno }}</h1>
+    {{ document.text }}
+</div>
+<div id="terms">
+    <h1>Terms</h1>
+    <form action="{% url 'topicterms:record_annotation' document.id %}" method="post">
+        {% csrf_token %}
+        <ul style="list-style: none;">
+            {% for term in document.term_set.all %}
+                <li>
+                    <input type="checkbox" name="terms" id="{{ term.id }}" value="{{ term.id }}"
+                        {% if term in topic_terms %} checked {% endif %}>
+                    <label for="{{ term.id }}">{{ term.term }}</label>
+                </li>
+            {% endfor %}
+        </ul>
+        <input type="submit" value="Submit">
+        <button style="float:right;">Skip</button>
+    </form>
+</div>
+{% endblock %}

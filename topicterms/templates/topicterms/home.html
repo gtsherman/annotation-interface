@@ -1,0 +1,14 @@
+{% extends 'base/base.html' %}
+
+{% block content %}
+<h1>Welcome!</h1>
+<h2>Get started!</h2>
+
+<ul id="document-list">
+    {% for document in document_list %}
+    <li class="document-item">
+        <a href="{% url 'topicterms:annotate' document.id %}">{{ document.docno }}</a>
+    </li>
+    {% endfor %}
+</ul>
+{% endblock %}
