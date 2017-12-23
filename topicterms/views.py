@@ -1,5 +1,5 @@
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.shortcuts import get_object_or_404, render, reverse, HttpResponseRedirect
 from django.views import generic
 
@@ -12,17 +12,24 @@ class IndexView(LoginRequiredMixin, generic.ListView):
     def get_queryset(self):
         return Document.objects.filter(annotator=self.request.user)
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['completed'] = [topic_term.document for topic_term in TopicTerms.objects.filter(user=self.request.user)]
+        return context
 
-class AnnotateView(generic.DetailView):
+
+class AnnotateView(UserPassesTestMixin, generic.DetailView):
     template_name = 'topicterms/annotate.html'
     model = Document
+
+    def test_func(self):
+        return Document.objects.filter(pk=self.kwargs['pk'], annotator=self.request.user)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         document = get_object_or_404(Document, pk=self.kwargs['pk'])
-        topic_terms = [topic_term.term for topic_term in TopicTerms.objects.filter(user=self.request.user,
+        context['topic_terms'] = [topic_term.term for topic_term in TopicTerms.objects.filter(user=self.request.user,
                                                                                    document=document)]
-        context['topic_terms'] = topic_terms
         return context
 
 

@@ -2,13 +2,30 @@
 
 {% block content %}
 <h1>Welcome!</h1>
-<h2>Get started!</h2>
 
-<ul id="document-list">
-    {% for document in document_list %}
-    <li class="document-item">
-        <a href="{% url 'topicterms:annotate' document.id %}">{{ document.docno }}</a>
-    </li>
-    {% endfor %}
-</ul>
+<div id="remaining-documents">
+    <h2 class="document-list-header">Remaining documents</h2>
+    <ul id="remaining-document-list">
+        {% for document in document_list %}
+        {% if document in completed %}
+        <li class="remaining-document-item">
+            <a href="{% url 'topicterms:annotate' document.id %}">{{ document.docno }}</a>
+        </li>
+        {% endif %}
+        {% endfor %}
+    </ul>
+</div>
+
+<div id="completed-documents">
+    <h2 class="document-list-header">Completed documents</h2>
+    <ul id="completed-document-list">
+        {% for document in document_list %}
+        {% if document not in completed %}
+        <li class="completed-document-item">
+            <a href="{% url 'topicterms:annotate' document.id %}">{{ document.docno }}</a>
+        </li>
+        {% endif %}
+        {% endfor %}
+    </ul>
+</div>
 {% endblock %}
