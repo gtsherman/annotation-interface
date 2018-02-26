@@ -1,0 +1,26 @@
+body {
+    font-family: Helvetica;
+    padding: 10px;
+}
+
+a {
+    color: #2937a5;
+    text-decoration: none;
+}
+
+.menu {
+    border-bottom: 1px solid gray;
+    padding: 1px;
+}
+
+.menu-list {
+    display: flex;
+    justify-content: flex-end;
+    margin: 0;
+}
+
+.menu-item {
+    display: table-cell;
+    margin-bottom: -2px;
+    padding: 10px;
+}

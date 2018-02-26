@@ -6,25 +6,36 @@
 {% endblock %}
 
 {% block content %}
-<div id="doc">
-    <h1>Document: {{ document.docno }}</h1>
-    {{ document.text }}
-</div>
-<div id="terms">
-    <h1>Terms</h1>
-    <form action="{% url 'topicterms:record_annotation' document.id %}" method="post">
-        {% csrf_token %}
-        <ul style="list-style: none;">
-            {% for term in document.term_set.all %}
-                <li>
-                    <input type="checkbox" name="terms" id="{{ term.id }}" value="{{ term.id }}"
-                        {% if term in topic_terms %} checked {% endif %}>
-                    <label for="{{ term.id }}">{{ term.term }}</label>
-                </li>
-            {% endfor %}
-        </ul>
-        <input type="submit" value="Submit">
-        <button style="float:right;">Skip</button>
-    </form>
+<div id="container">
+    <div id="doc">
+        <h1>Document</h1>
+        <p style="color: gray;">{{ document.docno }}</p>
+        {{ document.text|safe|linebreaks }}
+    </div>
+    <div id="terms">
+        <h1>Terms</h1>
+        <form action="{% url 'topicterms:record_annotation' document.id %}" method="post">
+            {% csrf_token %}
+            <ul style="list-style: none;">
+                {% for term in terms %}
+                    <li>
+                        <input
+                                type="checkbox"
+                                name="terms"
+                                id="{{ term.id }}"
+                                value="{{ term.id }}"
+                                {% if term in topic_terms %} checked {% endif %}>
+                        <label for="{{ term.id }}">{{ term.term }}</label>
+                    </li>
+                {% endfor %}
+            </ul>
+            <input type="submit" value="Submit">
+            <a href="{% url 'topicterms:skip_annotation' document.id %}">
+                <button type="button" style="float:right;">
+                    Skip
+                </button>
+            </a>
+        </form>
+    </div>
 </div>
 {% endblock %}

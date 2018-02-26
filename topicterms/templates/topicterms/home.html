@@ -1,31 +1,55 @@
 {% extends 'base/base.html' %}
 
 {% block content %}
-<h1>Welcome!</h1>
+    <h1>Documents</h1>
 
-<div id="remaining-documents">
-    <h2 class="document-list-header">Remaining documents</h2>
-    <ul id="remaining-document-list">
-        {% for document in document_list %}
-        {% if document in completed %}
-        <li class="remaining-document-item">
-            <a href="{% url 'topicterms:annotate' document.id %}">{{ document.docno }}</a>
-        </li>
-        {% endif %}
-        {% endfor %}
-    </ul>
-</div>
+    <div id="remaining-documents">
+        <h2 class="document-list-header">Remaining documents</h2>
+        <p class="remaining-count">{{ incomplete_docs|length }}/{{ document_list|length }} documents remaining</p>
 
-<div id="completed-documents">
-    <h2 class="document-list-header">Completed documents</h2>
-    <ul id="completed-document-list">
-        {% for document in document_list %}
-        {% if document not in completed %}
-        <li class="completed-document-item">
-            <a href="{% url 'topicterms:annotate' document.id %}">{{ document.docno }}</a>
-        </li>
+        {% if not incomplete_docs %}
+            <p class="no-items">If you have not hit the 5 hour work limit, please contact
+                <a href="mailto:gsherma2@illinois.edu">Garrick Sherman</a> for more documents (if you want them).</p>
+        {% else %}
+            {% with doc=incomplete_docs|first %}
+                <a href="{% url 'topicterms:annotate' doc.id %}">
+                    <button type="button" class="start-button">
+                        Begin
+                    </button>
+                </a>
+            {% endwith %}
         {% endif %}
-        {% endfor %}
-    </ul>
-</div>
+    </div>
+
+    <div id="skipped-documents">
+        <h2 class="document-list-header">Skipped documents</h2>
+        <p class="remaining-count">{{ skipped_docs|length }} skipped documents</p>
+
+        {% if skipped_docs %}
+            {% with doc=skipped_docs|first %}
+                <a href="{% url 'topicterms:annotate' doc.id %}">
+                    <button type="button" class="start-button">
+                        Revisit
+                    </button>
+                </a>
+            {% endwith %}
+        {% endif %}
+    </div>
+
+    <div id="completed-documents">
+        <h2 class="document-list-header">Completed documents</h2>
+        <p class="remaining-count">{{ complete_docs|length }} completed documents</p>
+
+        {% if complete_docs %}
+            <ul style="columns:auto 5;">
+                {% for doc in complete_docs %}
+                    <li class="document-item">
+                        <a href="{% url 'topicterms:annotate' doc.id %}">
+                            {{ doc.docno }}
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
 {% endblock %}

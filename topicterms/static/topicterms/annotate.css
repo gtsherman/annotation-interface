@@ -1,13 +1,20 @@
+p {
+    margin-top: 0;
+}
+
+#container {
+    display: flex;
+}
+
 #doc {
     width: 75%;
-    border: 1px solid gray;
-    float: left;
+    border-right: 1px solid gray;
     padding: 20px;
 }
 
 #terms {
     width: 20%;
-    border: 1px solid gray;
-    float: left;
     padding: 20px;
 }
+
+
