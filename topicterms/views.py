@@ -1,3 +1,4 @@
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.shortcuts import get_object_or_404, render, reverse, HttpResponseRedirect
@@ -30,10 +31,11 @@ class AnnotateView(LoginRequiredMixin, UserPassesTestMixin, generic.DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         document = get_object_or_404(Document, pk=self.kwargs['pk'])
-        context['terms'] = [document_term.term for document_term in DocumentTerm.objects.filter(document=document)]
+        context['terms'] = [document_term.term for document_term in DocumentTerm.objects.filter(
+            document=document).order_by('term')]
         context['topic_terms'] = [topic_term.term for topic_term in TopicTerms.objects.filter(user=self.request.user,
                                                                                    document=document)]
-        context['next_doc'] = Document.objects.filter()
+        context['next_doc'] = Document.objects.filter(annotator=self.request.user, complete=Document.INCOMPLETE)[0]
         return context
 
 
@@ -45,6 +47,11 @@ def record_annotation(request, document_id):
     TopicTerms.objects.filter(user=request.user, document=document).delete()
 
     if not request.POST.getlist('terms'):
+        messages.error(request, 'You must provide at least one term. If you cannot select a term, please use the skip button.')
+        return HttpResponseRedirect(reverse('topicterms:annotate', args=(document.pk,)))
+
+    if len(request.POST.getlist('terms')) > 10:
+        messages.error(request, 'You may only select up to 10 terms. Please select fewer terms.')
         return HttpResponseRedirect(reverse('topicterms:annotate', args=(document.pk,)))
 
     try:
@@ -58,7 +65,7 @@ def record_annotation(request, document_id):
     document.complete = Document.COMPLETE
     document.save()
 
-    next_doc = Document.objects.filter(annotator=request.user, complete=Document.INCOMPLETE).first()
+    next_doc = Document.objects.filter(annotator=request.user, complete=Document.INCOMPLETE)[0]
     if next_doc is None:
         return HttpResponseRedirect(reverse('topicterms:index'))
 
@@ -73,7 +80,7 @@ def skip_annotation(request, document_id):
             document.complete = Document.SKIPPED
             document.save()
 
-    next_doc = Document.objects.filter(annotator=request.user, complete=Document.INCOMPLETE).first()
+    next_doc = Document.objects.filter(annotator=request.user, complete=Document.INCOMPLETE)[0]
     if next_doc is None:
         return HttpResponseRedirect(reverse('topicterms:index'))
 
