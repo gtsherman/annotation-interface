@@ -11,6 +11,7 @@ class Document(models.Model):
     text = models.TextField()
     annotator = models.ManyToManyField(User)
     complete = models.SmallIntegerField(default=INCOMPLETE)
+    index = models.CharField(max_length=100)
 
     def __str__(self):
         return self.docno
@@ -21,6 +22,9 @@ class Term(models.Model):
 
     def __str__(self):
         return self.term
+
+    class Meta:
+        ordering = ['term']
 
 
 class DocumentTerm(models.Model):

@@ -14,7 +14,8 @@ class Command(BaseCommand):
         with open(options['data_location'], encoding='latin-1') as f:
             docs = json.load(f)
 
-            chunks = self._chunks([Document(docno=doc, text=docs[doc]) for doc in docs], 999)
+            chunks = self._chunks([Document(docno=doc, text=docs[doc]['text'], index=docs[doc]['index']) for doc in
+                                   docs], 999)
             for chunk in chunks:
                 Document.objects.bulk_create(chunk)
 
