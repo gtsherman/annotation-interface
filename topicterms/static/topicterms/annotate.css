@@ -1,19 +1,25 @@
+body {
+    background-color: white;
+}
+
 p {
     margin-top: 0;
 }
 
 #container {
     display: flex;
+    flex-direction: row-reverse;
 }
 
 #doc {
-    width: 75%;
     border-right: 1px solid gray;
     padding: 20px;
+    width: 75%;
 }
 
 #terms {
-    padding: 20px;
+    background-color: white;
+    color: black;
+    padding: 50px;
+    width: 20%;
 }
-
-

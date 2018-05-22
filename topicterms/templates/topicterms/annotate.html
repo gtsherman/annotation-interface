@@ -11,13 +11,6 @@
 
 {% block content %}
 <div id="container">
-    <div id="doc">
-        <h1>Document</h1>
-        <p style="color: gray;">{{ document.docno }}</p>
-        <div>
-            {{ document.text|safe|linebreaks }}
-        </div>
-    </div>
     <div id="terms">
         <h1>Terms</h1>
         {% if messages %}
@@ -49,6 +42,13 @@
                 </button>
             </a>
         </form>
+    </div>
+    <div id="doc">
+        <h1>Document</h1>
+        <p style="color: gray;">{{ document.docno }}</p>
+        <div>
+            {{ document.text|safe|linebreaks }}
+        </div>
     </div>
 </div>
 
