@@ -27,6 +27,13 @@ class Term(models.Model):
         ordering = ['term']
 
 
+class QualityCheck(models.Model):
+    user = models.ForeignKey(User, on_delete=models.PROTECT)
+    document = models.ForeignKey(Document, on_delete=models.PROTECT)
+    term = models.ForeignKey(Term, on_delete=models.PROTECT)
+    checked = models.BooleanField(default=False)
+
+
 class DocumentTerm(models.Model):
     term = models.ForeignKey(Term, on_delete=models.CASCADE)
     document = models.ForeignKey(Document, on_delete=models.CASCADE)

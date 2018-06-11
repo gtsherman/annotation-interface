@@ -55,10 +55,10 @@
 <script type="text/javascript">
     var toggleCheckboxes = function() {
       var checked = $('input:checked').length;
-      if (checked >= 10) {
+      if (checked >= {{ limit }}) {
         $('input[type=checkbox]:not(:checked)').prop('disabled', true);
       }
-      if (checked < 10) {
+      if (checked < {{ limit }}) {
         $('input[type=checkbox]:not(:checked)').prop('disabled', false);
       }
     }
