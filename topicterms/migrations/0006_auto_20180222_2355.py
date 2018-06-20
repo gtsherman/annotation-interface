@@ -6,11 +6,11 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('topicterms', '0005_document_complete'),
+        ('topicterms', '0004_auto_20180222_2050'),
     ]
 
     operations = [
-        migrations.AlterField(
+        migrations.AddField(
             model_name='document',
             name='complete',
             field=models.SmallIntegerField(default=0),
