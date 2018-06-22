@@ -31,11 +31,17 @@ class AnnotateView(LoginRequiredMixin, UserPassesTestMixin, generic.DetailView):
     def get_object(self):
         document = super().get_object()
 
-        # randomly include some specific instructions
-        r = random.randint(0, 4)
-        if r == 0:  # 1/5 chance
+        # randomly include some specific instructions as a quality check for the user input
+        if QualityCheck.objects.filter(user=self.request.user, document=document).exists():
+            term = QualityCheck.objects.get(user=self.request.user, document=document).term
+        elif random.randint(0, 4) == 0:
             term = Term.objects.order_by('?').first()
+        else:
+            term = None
 
+        QualityCheck.objects.get_or_create(user=self.request.user, document=document, term=term)
+
+        if term is not None:
             doc_html = BeautifulSoup(document.text, 'html.parser')
 
             please_select = doc_html.new_tag('p')
@@ -46,8 +52,6 @@ class AnnotateView(LoginRequiredMixin, UserPassesTestMixin, generic.DetailView):
             document.text = str(doc_html)
             document.quality_check_term = term
 
-            QualityCheck.objects.get_or_create(user=self.request.user, document=document, term=term)
-
         return document
 
     def test_func(self):
@@ -57,16 +61,17 @@ class AnnotateView(LoginRequiredMixin, UserPassesTestMixin, generic.DetailView):
         context = super().get_context_data(**kwargs)
 
         document = self.object
+        quality_check_active = hasattr(document, 'quality_check_term')
 
         context['terms'] = [document_term.term for document_term in DocumentTerm.objects.filter(
             document=document).order_by('term')]
-        if document.quality_check_term:
+        if quality_check_active:
             context['terms'].append(document.quality_check_term)
             context['terms'] = sorted(context['terms'], key=lambda t: t.term)
         context['topic_terms'] = [topic_term.term for topic_term in TopicTerms.objects.filter(user=self.request.user,
-                                                                                   document=document)]
+                                                                                              document=document)]
         context['next_doc'] = Document.objects.filter(annotator=self.request.user, complete=Document.INCOMPLETE)[0]
-        context['limit'] = 11 if document.quality_check_term else 10
+        context['limit'] = 11 if quality_check_active else 10
 
         return context
 
@@ -83,17 +88,14 @@ def record_annotation(request, document_id):
     TopicTerms.objects.filter(user=request.user, document=document).delete()
 
     if not request.POST.getlist('terms'):
-        messages.error(request, 'You must provide at least one term. If you cannot select a term, please use the skip button.')
+        messages.error(request, 'You must provide at least one term. If you cannot select a term, please use the skip'
+                                'button.')
         return HttpResponseRedirect(reverse('topicterms:annotate', args=(document.pk,)))
 
     limit = 10
-    quality_check = QualityCheck.objects.filter(user=request.user, document=document)
-    if quality_check.exists():
-        quality_check = quality_check.get()
-        quality_check_term = quality_check.term
+    quality_check = QualityCheck.objects.get(user=request.user, document=document)
+    if quality_check.term is not None:
         limit += 1
-    else:
-        quality_check_term = None
 
     if len(request.POST.getlist('terms')) > limit:
         messages.error(request, 'You may only select up to {} terms. Please select fewer terms.'.format(str(limit)))
@@ -102,13 +104,16 @@ def record_annotation(request, document_id):
     try:
         for term_id in request.POST.getlist('terms'):
             term = get_object_or_404(Term, pk=term_id)
-            if term == quality_check_term:  # quality_check exists and has been set to the QualityCheck object
+            if term == quality_check.term:
                 quality_check.checked = True
                 quality_check.save()
-                print('hi {}'.format(str(limit)))
             else:  # just a standard TopicTerm
-                topic_term = TopicTerms(user=request.user, document=document, term=term)
-                topic_term.save()
+                if term in [document_term.term for document_term in DocumentTerm.objects.filter(document=document)]:
+                    topic_term = TopicTerms(user=request.user, document=document, term=term)
+                    topic_term.save()
+                else:
+                    messages.error(request, 'This term does not appear to have been an option: {}'.format(term.term))
+                    return HttpResponseRedirect(reverse('topicterms:annotate', args=(document.pk,)))
     except KeyError:
         return HttpResponseRedirect(reverse('topicterms:annotate', args=(document.pk,)))
 

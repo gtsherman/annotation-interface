@@ -30,7 +30,7 @@ class Term(models.Model):
 class QualityCheck(models.Model):
     user = models.ForeignKey(User, on_delete=models.PROTECT)
     document = models.ForeignKey(Document, on_delete=models.PROTECT)
-    term = models.ForeignKey(Term, on_delete=models.PROTECT)
+    term = models.ForeignKey(Term, null=True, on_delete=models.PROTECT)
     checked = models.BooleanField(default=False)
 
 
