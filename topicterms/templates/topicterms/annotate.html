@@ -36,11 +36,13 @@
                 {% endfor %}
             </ul>
             <button>Submit</button>
-            <a href="{% url 'topicterms:skip_annotation' document.id %}">
-                <button type="button" style="float:right;">
-                    Skip
-                </button>
-            </a>
+            {% if document.skippable %}
+                <a href="{% url 'topicterms:skip_annotation' document.id %}">
+                    <button type="button" style="float:right;">
+                        Skip
+                    </button>
+                </a>
+            {% endif %}
         </form>
     </div>
     <div id="doc">

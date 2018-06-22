@@ -12,6 +12,7 @@ class Document(models.Model):
     annotator = models.ManyToManyField(User)
     complete = models.SmallIntegerField(default=INCOMPLETE)
     index = models.CharField(max_length=100)
+    skippable = models.BooleanField(default=True)
 
     def __str__(self):
         return self.docno

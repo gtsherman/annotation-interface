@@ -132,9 +132,12 @@ def skip_annotation(request, document_id):
     document = get_object_or_404(Document, pk=document_id)
 
     if request.user in document.annotator.all():
-        if document.complete == Document.INCOMPLETE:
+        if document.skippable and document.complete == Document.INCOMPLETE:
             document.complete = Document.SKIPPED
             document.save()
+        else:
+            messages.info(request, 'This document may not be skipped.')
+            return HttpResponseRedirect(reverse('topicterms:annotate', args=(document.pk,)))
 
     next_doc = Document.objects.filter(annotator=request.user, complete=Document.INCOMPLETE)[0]
     if next_doc is None:
