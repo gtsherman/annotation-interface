@@ -19,7 +19,8 @@ class IndexView(LoginRequiredMixin, generic.ListView):
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
         context['complete_docs'] = Document.objects.filter(annotator=self.request.user, complete=Document.COMPLETE)
-        context['incomplete_docs'] = Document.objects.filter(annotator=self.request.user, complete=Document.INCOMPLETE)
+        context['incomplete_docs'] = Document.objects.filter(annotator=self.request.user,
+                                                             complete=Document.INCOMPLETE).order_by('skippable')
         context['skipped_docs'] = Document.objects.filter(annotator=self.request.user, complete=Document.SKIPPED)
         return context
 

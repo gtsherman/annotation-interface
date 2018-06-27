@@ -23,6 +23,8 @@ class Command(BaseCommand):
         irr_docs = Document.objects.all().order_by('?')[:10]
         for doc in irr_docs:
             doc.annotator.add(*users)
+            doc.skippable = False
+            doc.save()
 
         for user in users:
             assigned_docs = Document.objects.exclude(id__in=[doc.id for doc in irr_docs])[:300]
