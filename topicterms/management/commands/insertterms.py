@@ -29,10 +29,12 @@ class Command(BaseCommand):
         for chunk in term_chunks:
             Term.objects.bulk_create(chunk)
 
-        documentterms = [
-            DocumentTerm(term=Term.objects.get(term=term), document=Document.objects.get(docno=docno)) for term in
-            termdocs for docno in termdocs[term] if Document.objects.filter(docno=docno).exists()
-        ]
+        documentterms = []
+        for term in termdocs:
+            for docno in termdocs[term]:
+                document = Document.objects.filter(docno=docno)
+                if document.exists():
+                    documentterms.append(DocumentTerm(term=Term.objects.get(term=term), document=document.get()))
 
         documentterm_chunks = self._chunks(documentterms, 999)
         for chunk in documentterm_chunks:
