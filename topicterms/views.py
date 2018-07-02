@@ -48,7 +48,10 @@ class AnnotateView(LoginRequiredMixin, UserPassesTestMixin, generic.DetailView):
             please_select = doc_html.new_tag('p')
             please_select.string = 'Please select the following term: {}'.format(term.term)
 
-            doc_html.p.insert_after(please_select)
+            try:
+                doc_html.p.insert_after(please_select)
+            except AttributeError: # no <p> in the document for some reason
+                doc_html.append(please_select)
 
             document.text = str(doc_html)
             document.quality_check_term = term
