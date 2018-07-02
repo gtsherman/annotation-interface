@@ -121,3 +121,8 @@ USE_TZ = True
 STATIC_URL = '/static/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
+
+
+# Session
+
+SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
