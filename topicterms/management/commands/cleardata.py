@@ -14,6 +14,7 @@ class Command(BaseCommand):
         DocumentTerm.objects.all().delete()
         Document.objects.all().delete()
         Term.objects.all().delete()
+        DocumentAssignment.objects.all().delete()
 
         if options['users']:
             User.objects.all().delete()

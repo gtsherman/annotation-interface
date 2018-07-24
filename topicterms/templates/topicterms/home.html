@@ -8,11 +8,11 @@
         <p class="remaining-count">{{ incomplete_docs|length }}/{{ document_list|length }} documents remaining</p>
 
         {% if not incomplete_docs %}
-            <p class="no-items">If you have not hit the 5 hour work limit, please contact
-                <a href="mailto:gsherma2@illinois.edu">Garrick Sherman</a> for more documents (if you want them).</p>
+            <p class="no-items">If you have not hit the 5 hour work limit and would like more documents, please contact
+                <a href="mailto:gsherma2@illinois.edu">Garrick Sherman</a>.</p>
         {% else %}
             {% with doc=incomplete_docs|first %}
-                <a href="{% url 'topicterms:annotate' doc.id %}">
+                <a href="{% url 'topicterms:annotate' doc.document.id %}">
                     <button type="button" class="start-button">
                         Begin
                     </button>
@@ -27,7 +27,7 @@
 
         {% if skipped_docs %}
             {% with doc=skipped_docs|first %}
-                <a href="{% url 'topicterms:annotate' doc.id %}">
+                <a href="{% url 'topicterms:annotate' doc.document.id %}">
                     <button type="button" class="start-button">
                         Revisit
                     </button>
@@ -44,8 +44,8 @@
             <ul style="columns:auto 5;">
                 {% for doc in complete_docs %}
                     <li class="document-item">
-                        <a href="{% url 'topicterms:annotate' doc.id %}">
-                            {{ doc.docno }}
+                        <a href="{% url 'topicterms:annotate' doc.document.id %}">
+                            {{ doc.document.docno }}
                         </a>
                     </li>
                 {% endfor %}

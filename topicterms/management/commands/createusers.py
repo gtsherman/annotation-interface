@@ -5,7 +5,7 @@ import string
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
-from topicterms.models import Document
+from topicterms.models import Document, DocumentAssignment
 
 
 class Command(BaseCommand):
@@ -32,14 +32,12 @@ class Command(BaseCommand):
         users = [User.objects.create_user(usernames[i], password=passwords[i]) for i in range(len(usernames))]
 
         irr_docs = Document.objects.all().order_by('?')[:options['shared']]
-        for doc in irr_docs:
-            doc.annotator.add(*users)
-            doc.skippable = False
-            doc.save()
+        DocumentAssignment.objects.bulk_create([DocumentAssignment(user=user, document=document, skippable=False) for
+                                                user in users for document in irr_docs])
 
         for user in users:
             assigned_docs = Document.objects.exclude(id__in=[doc.id for doc in irr_docs])[:options['docs']]
-            user.document_set.add(*assigned_docs)
+            DocumentAssignment.objects.bulk_create([DocumentAssignment(user=user, document=doc) for doc in assigned_docs])
 
         print('Created the following users:')
         for i in range(len(users)):

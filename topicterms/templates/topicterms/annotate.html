@@ -36,7 +36,7 @@
                 {% endfor %}
             </ul>
             <button>Submit</button>
-            {% if document.skippable %}
+            {% if document_assignment.skippable %}
                 <a href="{% url 'topicterms:skip_annotation' document.id %}">
                     <button type="button" style="float:right;">
                         Skip
@@ -65,6 +65,7 @@
       }
     }
 
+    $(document).ready(toggleCheckboxes);
     $('input[type=checkbox]').on('click', toggleCheckboxes);
 </script>
 {% endblock %}

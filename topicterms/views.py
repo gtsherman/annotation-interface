@@ -4,24 +4,29 @@ from bs4 import BeautifulSoup
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.db.models import Model
 from django.shortcuts import get_object_or_404, reverse, HttpResponseRedirect
 from django.views import generic
 
-from .models import Document, Term, DocumentTerm, TopicTerms, QualityCheck
+from .models import Document, Term, DocumentTerm, TopicTerms, QualityCheck, DocumentAssignment
 
 
 class IndexView(LoginRequiredMixin, generic.ListView):
     template_name = 'topicterms/home.html'
 
     def get_queryset(self):
-        return Document.objects.filter(annotator=self.request.user)
+        return DocumentAssignment.objects.filter(user=self.request.user)
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['complete_docs'] = Document.objects.filter(annotator=self.request.user, complete=Document.COMPLETE)
-        context['incomplete_docs'] = Document.objects.filter(annotator=self.request.user,
-                                                             complete=Document.INCOMPLETE).order_by('skippable')
-        context['skipped_docs'] = Document.objects.filter(annotator=self.request.user, complete=Document.SKIPPED)
+        context['complete_docs'] = DocumentAssignment.objects.filter(user=self.request.user,
+                                                                     complete=DocumentAssignment.COMPLETE)
+        context['incomplete_docs'] = DocumentAssignment.objects.filter(user=self.request.user,
+                                                                       complete=DocumentAssignment.INCOMPLETE).order_by(
+            'skippable')
+        context['skipped_docs'] = DocumentAssignment.objects.filter(user=self.request.user,
+                                                                    complete=DocumentAssignment.SKIPPED)
+
         return context
 
 
@@ -59,7 +64,7 @@ class AnnotateView(LoginRequiredMixin, UserPassesTestMixin, generic.DetailView):
         return document
 
     def test_func(self):
-        return Document.objects.filter(pk=self.kwargs['pk'], annotator=self.request.user)
+        return DocumentAssignment.objects.filter(document=self.kwargs['pk'], user=self.request.user)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -67,6 +72,7 @@ class AnnotateView(LoginRequiredMixin, UserPassesTestMixin, generic.DetailView):
         document = self.object
         quality_check_active = hasattr(document, 'quality_check_term')
 
+        context['document_assignment'] = DocumentAssignment.objects.get(document=document, user=self.request.user)
         context['terms'] = [document_term.term for document_term in DocumentTerm.objects.filter(
             document=document).order_by('term')]
         if quality_check_active:
@@ -83,12 +89,11 @@ class AnnotateView(LoginRequiredMixin, UserPassesTestMixin, generic.DetailView):
 def record_annotation(request, document_id):
     document = get_object_or_404(Document, pk=document_id)
 
-    if request.user not in document.annotator.all():
+    try:
+        document_assignment = DocumentAssignment.objects.get(document=document, user=request.user)
+    except Model.DoesNotExist:
         messages.error(request, 'You do not appear to have been assigned this document.')
         return HttpResponseRedirect(reverse('topicterms:index'))
-
-    # Clear existing annotations to make room for the new ones
-    TopicTerms.objects.filter(user=request.user, document=document).delete()
 
     if not request.POST.getlist('terms'):
         messages.error(request, 'You must provide at least one term. If you cannot select a term, please use the skip '
@@ -103,6 +108,9 @@ def record_annotation(request, document_id):
     if len(request.POST.getlist('terms')) > limit:
         messages.error(request, 'You may only select up to {} terms. Please select fewer terms.'.format(str(limit)))
         return HttpResponseRedirect(reverse('topicterms:annotate', args=(document.pk,)))
+
+    # Clear existing annotations to make room for the new ones
+    TopicTerms.objects.filter(user=request.user, document=document).delete()
 
     try:
         for term_id in request.POST.getlist('terms'):
@@ -120,11 +128,13 @@ def record_annotation(request, document_id):
     except KeyError:
         return HttpResponseRedirect(reverse('topicterms:annotate', args=(document.pk,)))
 
-    document.complete = Document.COMPLETE
-    document.save()
+    document_assignment.complete = DocumentAssignment.COMPLETE
+    document_assignment.save()
 
-    next_doc = Document.objects.filter(annotator=request.user, complete=Document.INCOMPLETE).order_by('skippable')[0]
-    if next_doc is None:
+    try:
+        next_doc = DocumentAssignment.objects.filter(user=request.user, complete=DocumentAssignment.INCOMPLETE).order_by(
+            'skippable')[0].document
+    except IndexError:
         return HttpResponseRedirect(reverse('topicterms:index'))
 
     return HttpResponseRedirect(reverse('topicterms:annotate', args=(next_doc.pk,)))
@@ -134,16 +144,23 @@ def record_annotation(request, document_id):
 def skip_annotation(request, document_id):
     document = get_object_or_404(Document, pk=document_id)
 
-    if request.user in document.annotator.all():
-        if document.skippable and document.complete == Document.INCOMPLETE:
-            document.complete = Document.SKIPPED
-            document.save()
+    try:
+        document_assignment = DocumentAssignment.objects.get(document=document, user=request.user)
+
+        if document_assignment.skippable and document_assignment.complete == DocumentAssignment.INCOMPLETE:
+            document_assignment.complete = DocumentAssignment.SKIPPED
+            document_assignment.save()
         else:
             messages.info(request, 'This document may not be skipped.')
             return HttpResponseRedirect(reverse('topicterms:annotate', args=(document.pk,)))
+    except Model.DoesNotExist:
+        messages.error(request, 'You do not appear to be assigned this document.')
+        return HttpResponseRedirect(reverse('topicterms:index'))
 
-    next_doc = Document.objects.filter(annotator=request.user, complete=Document.INCOMPLETE)[0]
-    if next_doc is None:
+    try:
+        next_doc = DocumentAssignment.objects.filter(user=request.user, complete=DocumentAssignment.INCOMPLETE).order_by(
+            'skippable')[0].document
+    except IndexError:
         return HttpResponseRedirect(reverse('topicterms:index'))
 
     return HttpResponseRedirect(reverse('topicterms:annotate', args=(next_doc.pk,)))
