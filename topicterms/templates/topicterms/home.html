@@ -5,7 +5,8 @@
 
     <div id="remaining-documents">
         <h2 class="document-list-header">Remaining documents</h2>
-        <p class="remaining-count">{{ incomplete_docs|length }}/{{ document_list|length }} documents remaining</p>
+        <p class="remaining-count">{{ incomplete_docs|length }}/{{ documentassignment_list|length }} documents
+            remaining</p>
 
         {% if not incomplete_docs %}
             <p class="no-items">If you have not hit the 5 hour work limit and would like more documents, please contact
