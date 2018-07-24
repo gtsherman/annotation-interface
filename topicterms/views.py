@@ -74,7 +74,6 @@ class AnnotateView(LoginRequiredMixin, UserPassesTestMixin, generic.DetailView):
             context['terms'] = sorted(context['terms'], key=lambda t: t.term)
         context['topic_terms'] = [topic_term.term for topic_term in TopicTerms.objects.filter(user=self.request.user,
                                                                                               document=document)]
-        context['next_doc'] = Document.objects.filter(annotator=self.request.user, complete=Document.INCOMPLETE)[0]
         context['limit'] = 11 if quality_check_active else 10
 
         return context
@@ -92,7 +91,7 @@ def record_annotation(request, document_id):
     TopicTerms.objects.filter(user=request.user, document=document).delete()
 
     if not request.POST.getlist('terms'):
-        messages.error(request, 'You must provide at least one term. If you cannot select a term, please use the skip'
+        messages.error(request, 'You must provide at least one term. If you cannot select a term, please use the skip '
                                 'button.')
         return HttpResponseRedirect(reverse('topicterms:annotate', args=(document.pk,)))
 
@@ -124,7 +123,7 @@ def record_annotation(request, document_id):
     document.complete = Document.COMPLETE
     document.save()
 
-    next_doc = Document.objects.filter(annotator=request.user, complete=Document.INCOMPLETE)[0]
+    next_doc = Document.objects.filter(annotator=request.user, complete=Document.INCOMPLETE).order_by('skippable')[0]
     if next_doc is None:
         return HttpResponseRedirect(reverse('topicterms:index'))
 
