@@ -30,25 +30,47 @@ class IndexView(LoginRequiredMixin, generic.ListView):
         return context
 
 
+class DocumentView(LoginRequiredMixin, UserPassesTestMixin, generic.DetailView):
+    template_name = 'topicterms/document.html'
+    model = Document
+
+    def get_object(self):
+        document = super().get_object()
+
+        # randomly include some specific instructions as a quality check for the user input
+        if QualityCheck.objects.filter(user=self.request.user, document=document).exists():
+            term = QualityCheck.objects.get(user=self.request.user, document=document).term
+        elif random.randint(0, 4) == 0:
+            term = Term.objects.order_by('?').first()
+        else:
+            term = None
+
+        quality_check = QualityCheck.objects.get_or_create(user=self.request.user, document=document, term=term)[0]
+
+        if quality_check.term is not None:
+            doc_html = BeautifulSoup(document.text, 'html.parser')
+            please_select = doc_html.new_tag('p')
+            please_select.string = 'Please select the following term: {}'.format(term.term)
+
+            try:
+                doc_html.p.insert_after(please_select)
+            except AttributeError: # no <p> in the document for some reason
+                doc_html.append(please_select)
+
+            document.text = str(doc_html)
+
+        return document
+
+    def test_func(self):
+        return DocumentAssignment.objects.filter(document=self.kwargs['pk'], user=self.request.user)
+
+
 class AnnotateView(LoginRequiredMixin, UserPassesTestMixin, generic.DetailView):
     template_name = 'topicterms/annotate.html'
     model = Document
 
     def get_object(self):
         document = super().get_object()
-
-        # Will need to parse out any potentially problematic parts of the HTML, and may need to inject a quality check
-        doc_html = BeautifulSoup(document.text, 'html.parser')
-
-        # Remove <head> and definitely any <base> elements
-        try:
-            doc_html.head.extract()
-        except AttributeError:
-            pass
-        try:
-            doc_html.base.extract()
-        except AttributeError:
-            pass
 
         # randomly include some specific instructions as a quality check for the user input
         if QualityCheck.objects.filter(user=self.request.user, document=document).exists():
@@ -60,18 +82,6 @@ class AnnotateView(LoginRequiredMixin, UserPassesTestMixin, generic.DetailView):
 
         QualityCheck.objects.get_or_create(user=self.request.user, document=document, term=term)
 
-        if term is not None:
-            please_select = doc_html.new_tag('p')
-            please_select.string = 'Please select the following term: {}'.format(term.term)
-
-            try:
-                doc_html.p.insert_after(please_select)
-            except AttributeError: # no <p> in the document for some reason
-                doc_html.append(please_select)
-
-            document.quality_check_term = term
-
-        document.text = str(doc_html)
         return document
 
     def test_func(self):
@@ -81,17 +91,18 @@ class AnnotateView(LoginRequiredMixin, UserPassesTestMixin, generic.DetailView):
         context = super().get_context_data(**kwargs)
 
         document = self.object
-        quality_check_active = hasattr(document, 'quality_check_term')
+        quality_check = QualityCheck.objects.get_or_create(user=self.request.user, document=document)[0]
+        print(quality_check.term)
 
         context['document_assignment'] = DocumentAssignment.objects.get(document=document, user=self.request.user)
         context['terms'] = [document_term.term for document_term in DocumentTerm.objects.filter(
             document=document).order_by('term')]
-        if quality_check_active:
-            context['terms'].append(document.quality_check_term)
+        if quality_check.term is not None:
+            context['terms'].append(quality_check.term)
             context['terms'] = sorted(context['terms'], key=lambda t: t.term)
         context['topic_terms'] = [topic_term.term for topic_term in TopicTerms.objects.filter(user=self.request.user,
                                                                                               document=document)]
-        context['limit'] = 11 if quality_check_active else 10
+        context['limit'] = 11 if quality_check.term is not None else 10
 
         return context
 
