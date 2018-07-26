@@ -37,6 +37,19 @@ class AnnotateView(LoginRequiredMixin, UserPassesTestMixin, generic.DetailView):
     def get_object(self):
         document = super().get_object()
 
+        # Will need to parse out any potentially problematic parts of the HTML, and may need to inject a quality check
+        doc_html = BeautifulSoup(document.text, 'html.parser')
+
+        # Remove <head> and definitely any <base> elements
+        try:
+            doc_html.head.extract()
+        except AttributeError:
+            pass
+        try:
+            doc_html.base.extract()
+        except AttributeError:
+            pass
+
         # randomly include some specific instructions as a quality check for the user input
         if QualityCheck.objects.filter(user=self.request.user, document=document).exists():
             term = QualityCheck.objects.get(user=self.request.user, document=document).term
@@ -48,8 +61,6 @@ class AnnotateView(LoginRequiredMixin, UserPassesTestMixin, generic.DetailView):
         QualityCheck.objects.get_or_create(user=self.request.user, document=document, term=term)
 
         if term is not None:
-            doc_html = BeautifulSoup(document.text, 'html.parser')
-
             please_select = doc_html.new_tag('p')
             please_select.string = 'Please select the following term: {}'.format(term.term)
 
@@ -58,9 +69,9 @@ class AnnotateView(LoginRequiredMixin, UserPassesTestMixin, generic.DetailView):
             except AttributeError: # no <p> in the document for some reason
                 doc_html.append(please_select)
 
-            document.text = str(doc_html)
             document.quality_check_term = term
 
+        document.text = str(doc_html)
         return document
 
     def test_func(self):
