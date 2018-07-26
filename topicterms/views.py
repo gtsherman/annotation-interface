@@ -169,9 +169,10 @@ def skip_annotation(request, document_id):
     try:
         document_assignment = DocumentAssignment.objects.get(document=document, user=request.user)
 
-        if document_assignment.skippable and document_assignment.complete == DocumentAssignment.INCOMPLETE:
-            document_assignment.complete = DocumentAssignment.SKIPPED
-            document_assignment.save()
+        if document_assignment.skippable:
+            if document_assignment.complete != DocumentAssignment.COMPLETE:  # don't change the state if it's complete
+                document_assignment.complete = DocumentAssignment.SKIPPED
+                document_assignment.save()
         else:
             messages.info(request, 'This document may not be skipped.')
             return HttpResponseRedirect(reverse('topicterms:annotate', args=(document.pk,)))
