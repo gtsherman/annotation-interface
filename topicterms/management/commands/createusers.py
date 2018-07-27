@@ -36,7 +36,8 @@ class Command(BaseCommand):
                                                 user in users for document in irr_docs])
 
         for user in users:
-            assigned_docs = Document.objects.exclude(id__in=[doc.id for doc in irr_docs])[:options['docs']]
+            assigned_docs = Document.objects.exclude(id__in=[doc.id for doc in irr_docs]).order_by('?')[:options[
+                'docs']]
             DocumentAssignment.objects.bulk_create([DocumentAssignment(user=user, document=doc) for doc in assigned_docs])
 
         print('Created the following users:')
